@@ -1,12 +1,21 @@
 if (globalThis.document) {
-   const parentNode = globalThis.document.getElementById("__DENO__");
+   const stateScriptElement = globalThis.document.getElementById("__DENO__");
+   const stateScriptElementData: string = stateScriptElement?.getAttribute('deno-data') as string;
+   const stateScriptElementRoute: any = stateScriptElement?.getAttribute('deno-route');
+
+   const parentNode = globalThis.document.getElementById("__deno");
 
    if (parentNode) {
       const hasChilds = parentNode.hasChildNodes();
 
       if (hasChilds) {
+         const textDecoder = new TextDecoder('utf-8');
+
          for (const el of parentNode.childNodes) {
-            React.render(<%COMPONENT% />, parentNode, el as Element);
+            const rebuildBinary = new Uint8Array([...stateScriptElementData.split(",").map((k) => parseInt(k))]);
+            const decodedContext = JSON.parse(textDecoder.decode(rebuildBinary));
+
+            React.render(<%COMPONENT% {...decodedContext} route={stateScriptElementRoute} />, parentNode, el as Element);
          }
       }
    }

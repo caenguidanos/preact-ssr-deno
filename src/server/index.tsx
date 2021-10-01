@@ -9,11 +9,7 @@ import { nanoid } from "https://esm.sh/nanoid";
 bootstrap();
 
 async function bootstrap(): Promise<void> {
-   const environment = "development";
-
-   if (environment === "development") {
-      await bundleDevelopment();
-   }
+   await bundle();
 
    const listener = Deno.listen({ port: 8080 });
 
@@ -118,10 +114,18 @@ function handleClientBrowserRoute(
 
       const pagePathname = "_deno/build/pages" + pathname;
 
+      const textEncoder = new TextEncoder();
+
       const htmlFile = Deno.readTextFileSync(pagePathname + "/index.html");
+      const context: string = JSON.stringify({ "url": "sin middleware" });
+      const contextUintArray: Uint8Array = textEncoder.encode(context);
+
+      const withData = htmlFile.concat(
+         `<script id="__DENO__" deno-data="${contextUintArray.toString()}" deno-route="${pathname}"></script></body>`,
+      );
 
       return new Response(
-         htmlFile,
+         withData,
          { headers },
       );
    } catch {
@@ -136,7 +140,9 @@ function handleOtherRoute() {
    return new Response("NOT FOUND", { status: 404, headers });
 }
 
-async function bundleDevelopment() {
+async function bundle() {
+   console.log("START BUNDLE");
+
    const pages: string[] = await glob(Deno.cwd() + "/src/client/pages/**/*.{tsx}");
    const htmlTemplate: string = await Deno.readTextFile("public/index.html");
 
@@ -147,8 +153,8 @@ async function bundleDevelopment() {
    }
 
    for (const page of pages) {
-      const STATIC_NODE = '<div id="__DENO__"></div>';
-      const V_STATIC_NODE = (html: string) => `<div id="__DENO__">${html}</div>`;
+      const STATIC_NODE = '<div id="__deno"></div>';
+      const V_STATIC_NODE = (html: string) => `<div id="__deno">${html}</div>`;
 
       // Create folder
       const distPath = page.replace("src/client/", "").replace(".tsx", ".html");
@@ -158,8 +164,6 @@ async function bundleDevelopment() {
       await Deno.mkdir(distFolderPath, { recursive: true });
       // Import export default function component
       const { default: PageComponent } = await import(Deno.cwd() + "/" + page);
-      // Render to static string
-      const html = renderToString(<PageComponent />);
 
       // Add hydration to component
       let hydrationTemplate = await Deno.readTextFile("src/server/injections/__hydration__");
@@ -179,11 +183,15 @@ async function bundleDevelopment() {
       const compiledFileName = distFolderPath + "/" + compiledFileId + ".js";
       await Deno.writeTextFile(compiledFileName, result.files["deno:///bundle.js"]);
 
+      // Render to static string
+      const html = renderToString(<PageComponent />);
+
       // Create render view from template
       const render = htmlTemplate.replace(STATIC_NODE, V_STATIC_NODE(html)).replace(
          "</body>",
          `<script src="${compiledFileName.replace(".js", ".min.js")}" type="module" defer></script></body>`,
       );
+
       // Write HTML to file system
       await Deno.writeTextFile(distFilePath, render);
       await Deno.remove(PAGE_TEMP);
