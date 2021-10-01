@@ -36,4 +36,11 @@ export function middleware(request: Request): { props: unknown } {
    };
 }
 
+export function head() {
+   return {
+      title: "HOME",
+      description: "Ye que pasa prims",
+   };
+}
+
 export default HomePage;

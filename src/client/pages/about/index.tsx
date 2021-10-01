@@ -18,4 +18,11 @@ const AboutPage: React.FunctionComponent = () => {
    );
 };
 
+export function head() {
+   return {
+      title: "ABOUT",
+      description: "Ye que pasa prims",
+   };
+}
+
 export default AboutPage;

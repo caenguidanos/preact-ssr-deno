@@ -45,7 +45,7 @@ async function bootstrap(): Promise<void> {
          }
 
          if (isClientBrowserRoute) {
-            return handleClientBrowserRoute(request, pathname);
+            return await handleClientBrowserRoute(request, pathname);
          }
 
          return handleOtherRoute();
@@ -104,21 +104,38 @@ function handleApiFunctionRoute(
    return new Response("API", { headers });
 }
 
-function handleClientBrowserRoute(
-   _request: Request,
+async function handleClientBrowserRoute(
+   request: Request,
    pathname: string,
-): Response {
+): Promise<Response> {
    try {
       const headers = new Headers();
       headers.append("content-type", "text/html; charset=8");
 
       const pagePathname = "_deno/build/pages" + pathname;
 
+      const manifest = await Deno.readTextFile("_deno/build/ssr_manifest.json");
+      const decodedManifest = JSON.parse(manifest) as any[];
+
+      let context: unknown = {};
+
+      for (const k of decodedManifest) {
+         if (k.middleware) {
+            const { middleware } = await import(Deno.cwd() + "/src/client/pages" + pathname + "/index.tsx");
+            if (middleware.constructor.name === "AsyncFunction") {
+               const { props } = await middleware(request);
+               context = props;
+            } else {
+               const { props } = middleware(request);
+               context = props;
+            }
+         }
+      }
+
       const textEncoder = new TextEncoder();
 
       const htmlFile = Deno.readTextFileSync(pagePathname + "/index.html");
-      const context: string = JSON.stringify({ "url": "sin middleware" });
-      const contextUintArray: Uint8Array = textEncoder.encode(context);
+      const contextUintArray: Uint8Array = textEncoder.encode(JSON.stringify(context));
 
       const withData = htmlFile.concat(
          `<script id="__DENO__" deno-data="${contextUintArray.toString()}" deno-route="${pathname}"></script></body>`,
@@ -128,8 +145,8 @@ function handleClientBrowserRoute(
          withData,
          { headers },
       );
-   } catch {
-      return new Response("UPS", { status: 404 });
+   } catch (error) {
+      return new Response(error, { status: 404 });
    }
 }
 
@@ -152,6 +169,8 @@ async function bundle() {
       await Deno.remove("_deno", { recursive: true });
    }
 
+   const manifest = [];
+
    for (const page of pages) {
       const STATIC_NODE = '<div id="__deno"></div>';
       const V_STATIC_NODE = (html: string) => `<div id="__deno">${html}</div>`;
@@ -163,7 +182,7 @@ async function bundle() {
 
       await Deno.mkdir(distFolderPath, { recursive: true });
       // Import export default function component
-      const { default: PageComponent } = await import(Deno.cwd() + "/" + page);
+      const { default: PageComponent, middleware, head } = await import(Deno.cwd() + "/" + page);
 
       // Add hydration to component
       let hydrationTemplate = await Deno.readTextFile("src/server/injections/__hydration__");
@@ -190,6 +209,9 @@ async function bundle() {
       const render = htmlTemplate.replace(STATIC_NODE, V_STATIC_NODE(html)).replace(
          "</body>",
          `<script src="${compiledFileName.replace(".js", ".min.js")}" type="module" defer></script></body>`,
+      ).replace(
+         "</head>",
+         `<title>${head().title}</title><meta name="description" content="${head().description}"></meta>`,
       );
 
       // Write HTML to file system
@@ -202,5 +224,16 @@ async function bundle() {
          minify: true,
          outfile: compiledFileName.replace(".js", ".min.js"),
       });
+
+      manifest.push({
+         id: compiledFileId,
+         compiled: compiledFileName,
+         path: distFolderPath,
+         url: distFolderPath === "_deno/build/pages" ? "/" : distFolderPath.replace("_deno/build/pages", ""),
+         middleware: !!middleware,
+         head: head(),
+      });
    }
+
+   await Deno.writeTextFile("_deno/build/ssr_manifest.json", JSON.stringify(manifest, undefined, 3));
 }

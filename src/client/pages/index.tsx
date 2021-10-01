@@ -23,4 +23,11 @@ const IndexPage: React.FunctionComponent = () => {
    );
 };
 
+export function head() {
+   return {
+      title: "INDEX",
+      description: "Ye que pasa prims",
+   };
+}
+
 export default IndexPage;
