@@ -1,0 +1,19 @@
+{
+   "$schema": "https://cdn.deno.land/deno/versions/v1.14.2/raw/cli/schemas/config-file.v1.json",
+   "compilerOptions": {
+      "allowJs": true,
+      "experimentalDecorators": true,
+      "jsx": "react",
+      // "jsxFactory": "h",
+      "jsxFragmentFactory": "Fragment",
+      "lib": ["dom", "dom.iterable", "dom.asynciterable", "deno.ns", "deno.unstable"]
+   },
+   "fmt": {
+      "options": {
+         "useTabs": false,
+         "lineWidth": 120,
+         "indentWidth": 3,
+         "singleQuote": false
+      }
+   }
+}

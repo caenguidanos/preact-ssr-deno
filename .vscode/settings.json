@@ -1,0 +1,34 @@
+{
+   "workbench.colorTheme": "GitHub Dark",
+   "editor.fontFamily": "IBM Plex Mono",
+   "editor.lineHeight": 24,
+   "editor.fontLigatures": false,
+   "editor.formatOnSave": true,
+   "editor.fontSize": 13,
+   "editor.defaultFormatter": "esbenp.prettier-vscode",
+   "deno.enable": true,
+   "deno.lint": true,
+   "deno.unstable": true,
+   "deno.config": "./tsconfig.json",
+   "deno.suggest.imports.hosts": {
+      "https://deno.land": true,
+      "https://esm.sh": false
+   },
+
+   "[typescriptreact]": {
+      "editor.defaultFormatter": "denoland.vscode-deno"
+   },
+   "[typescript]": {
+      "editor.defaultFormatter": "denoland.vscode-deno"
+   },
+   "[javascript]": {
+      "editor.defaultFormatter": "denoland.vscode-deno"
+   },
+   "[javascriptreact]": {
+      "editor.defaultFormatter": "denoland.vscode-deno"
+   },
+   "[shellscript]": {
+      "files.eol": "\n",
+      "editor.defaultFormatter": "foxundermoon.shell-format"
+   }
+}

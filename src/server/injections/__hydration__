@@ -1,0 +1,13 @@
+if (globalThis.document) {
+   const parentNode = globalThis.document.getElementById("__DENO__");
+
+   if (parentNode) {
+      const hasChilds = parentNode.hasChildNodes();
+
+      if (hasChilds) {
+         for (const el of parentNode.childNodes) {
+            React.render(<%COMPONENT% />, parentNode, el as Element);
+         }
+      }
+   }
+}
