@@ -115,18 +115,32 @@ async function handleClientBrowserRoute(
       const pagePathname = "_deno/build/pages" + pathname;
 
       const manifest = await Deno.readTextFile("_deno/build/ssr_manifest.json");
-      const decodedManifest = JSON.parse(manifest) as any[];
+      const decodedManifest = JSON.parse(manifest) as {
+         "id": string;
+         "compiled": string;
+         "path": string;
+         "url": string;
+         "middleware": boolean;
+         "head": Record<string, string>;
+      }[];
 
       let context: unknown = {};
 
-      for (const k of decodedManifest) {
-         if (k.middleware) {
-            const { middleware } = await import(Deno.cwd() + "/src/client/pages" + pathname + "/index.tsx");
-            if (middleware.constructor.name === "AsyncFunction") {
-               const { props } = await middleware(request);
-               context = props;
+      for (const route of decodedManifest) {
+         if (route.url === pathname) {
+            let routeFilePath: string;
+
+            if (pathname === "/") {
+               routeFilePath = Deno.cwd() + "/src/client/pages/index.tsx";
             } else {
-               const { props } = middleware(request);
+               routeFilePath = Deno.cwd() + "/src/client/pages" + pathname + "/index.tsx";
+            }
+
+            const { middleware } = await import(routeFilePath);
+
+            if (middleware && typeof middleware === "function") {
+               const { props } = await middleware(request);
+
                context = props;
             }
          }

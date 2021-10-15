@@ -5,13 +5,9 @@ const HomePage: React.FunctionComponent<{ url: string }> = ({ url }) => {
 
    return (
       <div
-         onClick={() => {
-            console.log("alojomora");
-         }}
          class={`box box-oye`}
       >
-         <b>Adios</b>
-         <b>{url ? url + "PLUS HYDRATION" : "ONLY CLIENTE"}</b>
+         <b>{url ? url + " PLUS HYDRATION" : "ONLY CLIENTE"}</b>
 
          <ul>
             {st.map((k) => <li key={k}>{k}</li>)}
@@ -22,7 +18,7 @@ const HomePage: React.FunctionComponent<{ url: string }> = ({ url }) => {
                console.log("HOla!!");
             }}
          >
-            CLick
+            Go!
          </button>
       </div>
    );
